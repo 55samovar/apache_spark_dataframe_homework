@@ -1,0 +1,3 @@
+from pyspark.sql.functions import col
+covid_df = spark.read.option('header', True).option('sep', ',').option('inferSchema', True).csv('covid-data.csv')
+covid_df.select('iso_code', 'location', 'total_cases').filter(col('date').isin('2021-03-31', '2021-03-31')).orderBy(col('total_cases').desc()).show(15)
