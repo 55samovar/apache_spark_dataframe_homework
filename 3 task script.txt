@@ -1,5 +1,7 @@
 import pyspark.sql.functions as F
 from pyspark.sql import Window
 from pyspark.sql.functions import col
+
 covid_df = spark.read.option('header', True).option('sep', ',').option('inferSchema', True).csv('covid-data.csv')
+
 covid_df.select('date', 'new_cases', F.lag(col('new_cases')).over(Window.partitionBy('iso_code').orderBy('date')).alias('new_cases_yesterday'), (col('new_cases') -  F.lag(col('new_cases')).over(Window.partitionBy('iso_code').orderBy('date'))).alias('change')).where((col('date').between('2021-03-22', '2021-03-28')) & (col('iso_code') == 'RUS')).show()
