@@ -1,3 +1,11 @@
 from pyspark.sql.functions import col
-covid_df = spark.read.option('header', True).option('sep', ',').option('inferSchema', True).csv('covid-data.csv')
-covid_df.select('date', 'location', 'new_cases').where((col('date') >= '2021-03-22') & (col('date') <= '2021-03-28')).groupBy('location').max('new_cases').orderBy(col('max(new_cases)').desc()).show()
+from pyspark.sql.functions import concat
+from pyspark.sql.functions import length
+import pyspark.sql.functions as F
+from pyspark.sql import Window
+
+covid_df = spark.read.option('header', True).option('sep', ',').option('inferSchema', True).csv('covid-data.csv') .where((col('date') >= '2021-03-22') & (col('date') <= '2021-03-28') & (length(col('iso_code')) == 3)).select('date', 'location',  F.max('new_cases').over(Window.partitionBy('location')).alias('max'), concat('location', F.max('new_cases').over(Window.partitionBy('location'))).alias('composite_key'))
+
+covid_df2 = spark.read.option('header', True).option('sep', ',').option('inferSchema', True).csv('covid-data.csv').where((col('date') >= '2021-03-22') & (col('date') <= '2021-03-28') & (length(col('iso_code')) == 3)).select('date', concat('location', 'new_cases').alias('composite_key'))
+
+covid_df.join(covid_df2, 'composite_key', 'left').select(covid_df2.date, covid_df.location, covid_df.max).distinct().orderBy(col('max').desc()).show(10)
