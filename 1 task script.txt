@@ -1,3 +1,7 @@
 from pyspark.sql.functions import col
+from pyspark.sql.functions import length
+from pyspark.sql.functions import cast
+
 covid_df = spark.read.option('header', True).option('sep', ',').option('inferSchema', True).csv('covid-data.csv')
-covid_df.select('iso_code', 'location', 'total_cases').filter(col('date').isin('2021-03-31', '2021-03-31')).orderBy(col('total_cases').desc()).show(15)
+
+covid_df.select('iso_code', 'location', (col('total_cases').cast('integer') / col('population').cast('integer')). alias('percentage_of_cases')).filter(col('date').isin('2021-03-31', '2021-03-31')).where(length(col('iso_code')) == 3).orderBy(col('percentage_of_cases').desc()).show(15)
